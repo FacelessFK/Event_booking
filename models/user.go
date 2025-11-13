@@ -1,6 +1,8 @@
 package models
 
 import (
+	"errors"
+
 	"github.com/FacelessFK/Event_booking/db"
 	"github.com/FacelessFK/Event_booking/utils"
 )
@@ -31,4 +33,22 @@ func (u User) Save() error {
 	id, err := res.LastInsertId()
 	u.ID = id
 	return err
+}
+
+func (u *User) ValidateCredentials() error {
+	query := "SELECT id,password FROM users WHERE email = ?"
+	row := db.DB.QueryRow(query, u.Email)
+
+	var retrievedPassword string
+	err := row.Scan(&u.ID, &retrievedPassword)
+	if err != nil {
+		return errors.New("Credentials invalid")
+	}
+
+	passwordIsValid := utils.CheckPasswordHash(u.Password, retrievedPassword)
+
+	if !passwordIsValid {
+		return errors.New("Credentials invalid")
+	}
+	return nil
 }
